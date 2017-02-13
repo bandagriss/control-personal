@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
+
 import json
 import pandas as pd
 import requests
 import timeit
 from getpass import getpass
 
-
-from marcado_v2 import Marcado
+from prueba import Marcado
 
 cabecera1 = {'x-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c3VhcmlvIjoiYWRtaW4iLCJpYXQiOjE0ODYzOTU4NjF9.6hukWA93LoY0bsfnuxt_hVWoNGfav6Ury88jozhN2ew'}
 url = "http://192.168.27.205:5000/api/v1/registros_rango?inicio=2016-09-01&fin=2016-09-31"
@@ -32,22 +32,12 @@ columnas = [
     "fecha"
 ]
 
-#probando con marcacion fechas
-#def marcadoFecha(usuario):
-    #datos = pd.DataFrame(data, columns=columnas)
-    #return datos.head()
-    #return datos[datos['uid'] == 'jarteaga']
-    #return datos[(datos['uid'] == usuario) & (datos['fecha'] == '2016-09-30')]
-    #return datos.groupby(["uid", "fecha"])["hora"].count()
-#horas = marcadoFecha("jarteaga")
-#print horas
-
 def usuarioFechas():
 
     datos = pd.DataFrame(data, columns=columnas)
     #count = 1
-    #for name, group in datos.groupby(["fecha", "uid"]):
-    for name, group in datos[datos["uid"] == "jarteaga"].groupby(["fecha", "uid"]):
+    for name, group in datos.groupby(["fecha", "uid"]):
+    #for name, group in datos[datos["uid"] == "jarteaga"].groupby(["fecha", "uid"]):
         horas_registradas = []
         horas =  group["hora"]
 
@@ -72,15 +62,11 @@ def usuarioFechas():
             horas_registradas.append(hora)
             
         marcado = Marcado()
-        resultado =  marcado.main(horas_registradas, uid, fecha, dispositivo)
-        #print horas
+        horas_registradas = ["08:55:00", "15:01:00"]  #mandando horas manualmente
+        #DATOS "UNO" = Un turno, "DOS" = "Dos turnos"
+        print horas_registradas
+        resultado =  marcado.main(horas_registradas, uid, fecha, dispositivo, "UNO")
         print(json.dumps(resultado, sort_keys=False, indent=4)+ ",")  #imprime en consola el json
-        #json_resultado =  json.dumps(resultado, sort_keys=True, indent=4, separators=(',',': ')) + ","  #imprime en consola el json
-        #print json_resultado
-        #print count
-        #count+=1
-        #grabartxt(json_resultado)
-        #horas_registradas = []
 
 
 #funciona para saber cuanto tardo la ejecucion del script

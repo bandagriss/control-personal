@@ -1,19 +1,41 @@
 #!/usr/bin/env python
 # -*- coding: utf-8
 import json
+import sys
 from datetime import datetime
 
 class Marcado():
     def __init__(self):
         self.diccionario_permiso = {}
+        self.tiempos = {}
+
+    def horarioContinuo(self):
+        self.marcacion = {
+            "entrada-horario-continuo":{},
+            "salida-horario-continuo": {},            
+            "permisos": [],
+        }
+
+    def horarioNormalDosTurnos(self):
         self.marcacion = {
             "entrada-manana":{},
+            "salida-manana": {},            
             "entrada-tarde":{},
+            "salida-tarde": {},            
             "permisos": [],
-            "salida-manana": {},
-            "salida-tarde": {},
         }
-        self.tiempos = {}
+
+    def horarioNormalTresTurnos(self):
+        self.marcacion = {
+            "entrada-manana":{},
+            "salida-manana": {},            
+            "entrada-tarde":{},
+            "salida-tarde": {},
+            "entrada-noche": {},
+            "salida-noche": {},
+            "permisos": [],
+        }
+        
 
     def convertir_fecha(self, hora):
         return datetime.strptime(hora, "%H:%M:%S")
@@ -78,21 +100,68 @@ class Marcado():
         
 
     #principal
-    def main(self, horas, uid, fecha, dispositivo):
-        horarios = {
-            "manana":{
-                "min_entrada": "05:00:00",
-                "entrada": "08:40:00",
-                "salida": "12:00:00",
-                "max_salida": "13:30:00",
-            },
-            "tarde":{
-                "min_entrada": "13:30:00",
-                "entrada": "14:30:00",
-                "salida": "19:00:00",
-                "max_salida": "23:59:59",
+    def main(self, horas, uid, fecha, dispositivo, Turnos):
+        if Turnos == "UNO":
+            horarios = {
+                "horario-continuo":{
+                    "min_entrada": "05:00:00",
+                    "entrada": "08:40:00",
+                    "salida": "16:00:00",
+                    "max_salida": "23:59:59",
+                }
             }
-        }
+            horasM = self.marcadoTurno(horarios, horas, "horario-continuo")
+            self.horarioContinuo()
+
+        elif Turnos == "DOS":
+            horarios = {
+                "manana":{
+                    "min_entrada": "05:00:00",
+                    "entrada": "08:40:00",
+                    "salida": "12:00:00",
+                    "max_salida": "13:30:00",
+                },
+                "tarde":{
+                    "min_entrada": "13:30:00",
+                    "entrada": "14:30:00",
+                    "salida": "19:00:00",
+                    "max_salida": "23:59:59",
+                }
+            }
+
+            horasM = self.marcadoTurno(horarios, horas, "manana")
+            horasT = self.marcadoTurno(horarios, horas, "tarde")
+            self.horarioNormalDosTurnos()
+                 
+        elif Turnos =="TRES":
+            horarios = {
+                "manana":{
+                    "min_entrada": "05:00:00",
+                    "entrada": "08:40:00",
+                    "salida": "12:00:00",
+                    "max_salida": "13:30:00",
+                },
+                "tarde":{
+                    "min_entrada": "13:30:00",
+                    "entrada": "14:30:00",
+                    "salida": "17:00:00",
+                    "max_salida": "17:59:59",
+                },
+                "noche":{
+                    "min_entrada": "18:00:00",
+                    "entrada": "18:30:00",
+                    "salida": "22:30:00",
+                    "max_salida": "23:59:59",
+                }
+            }
+
+            horasM = self.marcadoTurno(horarios, horas, "manana")
+            horasT = self.marcadoTurno(horarios, horas, "tarde")
+            horasN = self.marcadoTurno(horarios, horas, "noche")
+            self.horarioNormalTresTurnos()
+            
+
+        
         
         json_marcado = {
             "marcado":[],
@@ -104,35 +173,72 @@ class Marcado():
         json_marcado["dispositivo"] = dispositivo
         
         
-        #separa las horas en turnos
+        if Turnos == "UNO":
+            #horario continuo
+            count = 1
+            if len(horasM) > 0:
+                for hora in horasM:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
+        if Turnos == "DOS":
+            #manana
+            count = 1
+            if len(horasM) > 0:
+                for hora in horasM:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
+            #tarde    
+            count = 1
+            if len(horasT) > 0:
+                for hora in horasT:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
+                        
+        if Turnos == "TRES":
+            #manana
+            count = 1
+            if len(horasM) > 0:
+                for hora in horasM:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
+            #tarde    
+            count = 1
+            if len(horasT) > 0:
+                for hora in horasT:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
+            #noche
+            count = 1
+            if len(horasN) > 0:
+                for hora in horasN:
+                    if count%2 == 0:
+                        self.marcado(hora, horarios, json_marcado, "salida", count)
+                        count+=1
+                    else:
+                        self.marcado(hora, horarios, json_marcado, "entrada", count)
+                        count+=1
 
-        horasM = self.marcadoTurno(horarios, horas, "manana")
-        horasT = self.marcadoTurno(horarios, horas, "tarde")
 
-        
-        #mañana
-        count = 1
-        if len(horasM) > 0:
-            for hora in horasM:
-                if count%2 == 0:
-                    self.marcado(hora, horarios, json_marcado, "salida", count)
-                    count+=1
-                else:
-                    self.marcado(hora, horarios, json_marcado, "entrada", count)
-                    count+=1
-            
-            
-        #tarde    
-        count = 1
-        if len(horasT) > 0:
-            for hora in horasT:
-                if count%2 == 0:
-                    self.marcado(hora, horarios, json_marcado, "salida", count)
-                    count+=1
-                else:
-                    self.marcado(hora, horarios, json_marcado, "entrada", count)
-                    count+=1
-            
                 
         # ---------------     verificando si olvido marcar  -----------------------------
         # verificar esta parte para los casos en que el usuario llega tarde y no marca salida
