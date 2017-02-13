@@ -7,7 +7,7 @@ import requests
 import timeit
 from getpass import getpass
 
-from prueba import Marcado
+from marcado_v2 import Marcado
 
 cabecera1 = {'x-access-token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1c3VhcmlvIjoiYWRtaW4iLCJpYXQiOjE0ODYzOTU4NjF9.6hukWA93LoY0bsfnuxt_hVWoNGfav6Ury88jozhN2ew'}
 url = "http://192.168.27.205:5000/api/v1/registros_rango?inicio=2016-09-01&fin=2016-09-31"
@@ -62,7 +62,7 @@ def usuarioFechas():
             horas_registradas.append(hora)
             
         marcado = Marcado()
-        horas_registradas = ["08:55:00", "15:01:00"]  #mandando horas manualmente
+        #horas_registradas = ["08:55:00", "16:01:00"]  #mandando horas manualmente
         #DATOS "UNO" = Un turno, "DOS" = "Dos turnos"
         print horas_registradas
         resultado =  marcado.main(horas_registradas, uid, fecha, dispositivo, "UNO")
