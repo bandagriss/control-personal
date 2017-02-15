@@ -7,8 +7,6 @@ import time
 from marcado_v2 import Marcado
 
 class TiempoReal(object):
-    """
-    """
     
     def __init__(self):
         print "marcando en tiempo real"
@@ -16,7 +14,7 @@ class TiempoReal(object):
     
     def marcacion_real(self, horas_registradas, uid, fecha, dispositivo):  #horas_registradas es un array de horas, uid=usuario, fecha, dispositivo
         marcado = Marcado()
-        resultado = marcado.main(horas_registradas,uid, fecha, dispositivo)
+        resultado = marcado.main(horas_registradas,uid, fecha, dispositivo, "DOS")
         print chr(27)+"[1;32m"+ "Mostrando servicio para reportes" + chr(27)+"[0m"
         print(json.dumps(resultado, sort_keys=False, indent=4)+ ",")
         marcacion_dia = {
@@ -49,9 +47,15 @@ class TiempoReal(object):
                                     for campo, permiso in permisos.iteritems():
                                         if campo == "hasta":
                                             #if permiso < time.strftime("%H:%M:%S"):
-                                            if permiso < "10:00:00":
+                                            hora_ejemplo = "15:10:00"
+                                            if permiso < hora_ejemplo:
                                                 horas_encontradas["hasta"] = permiso
+                                                #horas_encontradas["desde"] = permisos["desde"]
+                                        if campo == "desde":
+                                            #else:
+                                            if permiso < hora_ejemplo:
                                                 horas_encontradas["desde"] = permisos["desde"]
+                                            
                                     if len(horas_encontradas) > 0:
                                         permisos_encontrados["permisos"].append(horas_encontradas)
                                         horas_encontradas = {}
