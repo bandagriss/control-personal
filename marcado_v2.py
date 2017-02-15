@@ -70,6 +70,66 @@ class Marcado():
             if hora > horarios[turno]["min_entrada"] and hora < horarios[turno]["max_salida"]:
                 horas_registradas.append(hora)
         return horas_registradas
+
+    def verificacionEntrada(self, horarios):
+        marcacion_auxiliar = {}
+        marcacion_auxiliar["permisos"] = []
+        #verificamos que no haya vuelto de alguna salida
+        for index, value in horarios.iteritems():
+            if len(self.diccionario_permiso) > 0:
+                if self.diccionario_permiso["desde"] > value["entrada"] and self.diccionario_permiso["desde"] < value["salida"]: # salio y no marco entrada entonces se genera un permiso hasta el final del dia
+                    self.diccionario_permiso["hasta"]  = value["salida"]
+                    self.marcacion["permisos"].append(self.diccionario_permiso)
+                    self.diccionario_permiso = {}
+                    
+                    if not self.marcacion["entrada-"+index] and not self.marcacion["salida-"+index]:
+                        if  len(self.marcacion["permisos"]) > 0:
+                            for permisos in self.marcacion["permisos"]:
+                                u = 1
+                        else:
+                            self.diccionario_permiso["desde"] = value["entrada"]
+                            self.diccionario_permiso["hasta"]  = value["salida"]
+                            self.marcacion["permisos"].append(self.diccionario_permiso)
+                            self.diccionario_permiso = {}
+        #volvemos a iterar para buscar faltas en la tarde y en la mañana
+        for indice, valor in horarios.iteritems():
+            if not self.marcacion["salida-"+indice]:
+                if len(self.marcacion["permisos"]) > 0 and not self.marcacion["salida-"+indice]:
+                    for permisos in self.marcacion["permisos"]:
+                        for campo, permiso_hora in permisos.iteritems():
+                            if campo == "hasta":
+                                if permiso_hora > valor["entrada"] and permiso_hora < valor["salida"]:
+                                    print "la hora maxima del permiso es :" , permiso_hora
+                                    #revisar esto esta medio loco pero vamos
+                                    self.diccionario_permiso["desde"] = permiso_hora
+                                    self.diccionario_permiso["hasta"]  = valor["salida"]
+                                    marcacion_auxiliar["permisos"].append(self.diccionario_permiso)
+                                    self.diccionario_permiso = {}
+                                else:
+                                #if permiso_hora >= valor["salida"] and permiso_hora < valor["entrada"]:
+                                    if permiso_hora != valor["salida"]:
+                                        self.diccionario_permiso["desde"] = valor["entrada"]
+                                        self.diccionario_permiso["hasta"]  = valor["salida"]
+                                        marcacion_auxiliar["permisos"].append(self.diccionario_permiso)
+                                        self.diccionario_permiso = {}
+                                
+                else:
+                    self.diccionario_permiso["desde"] = valor["entrada"]
+                    self.diccionario_permiso["hasta"]  = valor["salida"]
+                    self.marcacion["permisos"].append(self.diccionario_permiso)
+                    self.diccionario_permiso = {}
+                    
+            #no marco entrada y solo marco salida        
+            if not self.marcacion["entrada-"+indice] and self.marcacion["salida-"+indice] and len(self.marcacion["permisos"]) == 0:
+                self.diccionario_permiso["desde"] = valor["entrada"]
+                self.diccionario_permiso["hasta"]  = valor["salida"]
+                marcacion_auxiliar["permisos"].append(self.diccionario_permiso)
+                self.diccionario_permiso = {}
+
+                
+        #recuperando             
+        for auxiliar in marcacion_auxiliar["permisos"]:
+            self.marcacion["permisos"].append(auxiliar)
         
 
     #principal
@@ -213,78 +273,13 @@ class Marcado():
 
 
         #verificando que  exista una salida sin regreso
-        for indiceVerificacion, valorVerificacion in horarios.iteritems():
-            if self.marcacion["salida-"+indiceVerificacion] and len(self.diccionario_permiso) > 0: # marca salida con permiso, marca salida turno (no marca regreso)
-                if self.diccionario_permiso["desde"] > valorVerificacion["entrada"] and self.diccionario_permiso["desde"] < valorVerificacion["salida"]:
-                    self.diccionario_permiso["hasta"] = valorVerificacion["salida"]
-                    self.marcacion["permisos"].append(self.diccionario_permiso)
-                    self.diccionario_permiso = {}
-
-                        
-        # ---------------     verificando si olvido marcar  -----------------------------
-        # verificar esta parte para los casos en que el usuario llega tarde y no marca salida good!!!
-        # verificar para que cuando llega temprano y no marca salida solo le de un permiso desde la hora de entrada valida
-
         
-        #guardando permisos
-        permisos_encontrados = self.marcacion["permisos"]
-        falto_marcado = {}
-        falto_marcado["permisos"] = []
-        
-        for index, value in horarios.iteritems():
-                
-            if not self.marcacion["salida-"+index] and len(self.diccionario_permiso) > 0: # tiene permiso y no marco salida
-                self.diccionario_permiso["hasta"] = value["salida"]
-                self.marcacion["permisos"].append(self.diccionario_permiso)
-                self.diccionario_permiso = {}
-                print "no marco salida", self.diccionario_permiso
-                
-            elif self.marcacion["entrada-"+index] and not self.marcacion["salida-"+index] and len(self.diccionario_permiso) == 0: # llego temprano pero se olvido marcar salida
-                self.diccionario_permiso["desde"] = value["entrada"]
-                self.diccionario_permiso["hasta"] = value["salida"]
-                self.marcacion["permisos"].append(self.diccionario_permiso)
-                self.diccionario_permiso = {}
-                
-            elif not self.marcacion["entrada-"+index] and not self.marcacion["salida-"+index]: #no tiene entrada ni salida
-                if len(self.marcacion["permisos"]) > 0:
-                    for tiene_permiso in permisos_encontrados:
-                        for campo, permiso_registrado in tiene_permiso.iteritems():
-                            if campo == "hasta":
-                                if permiso_registrado > horarios[index]["entrada"] and permiso_registrado < horarios[index]["salida"]:
-                                    self.diccionario_permiso["desde"] = permiso_registrado
-                                    self.diccionario_permiso["hasta"] = value["salida"]
-                                    self.marcacion["permisos"].append(self.diccionario_permiso)
-                                    self.diccionario_permiso = {}
-                                    
-                else:
-                    self.diccionario_permiso["desde"] = value["entrada"]
-                    self.diccionario_permiso["hasta"] = value["salida"]
-                    falto_marcado["permisos"].append(self.diccionario_permiso)
-                    self.diccionario_permiso = {}
+        self.verificacionEntrada(horarios)
+        ## fin verificacion
 
-            elif not self.marcacion["entrada-"+index] and self.marcacion["salida-"+index] and len(self.marcacion["permisos"]) == 0: # no tiene entrada pero si salida
-                # if len(self.marcacion["permisos"]) > 0:
-                #     for tiene_permiso in permisos_encontrados:
-                #         for campo, permiso_registrado in tiene_permiso.iteritems():
-                #             if campo == "hasta":
-                #                 if permiso_registrado > horarios[index]["entrada"] and permiso_registrado < horarios[index]["salida"]:
-                #                     print permiso_registrado
-                                    
-                # else:
-                self.diccionario_permiso["desde"] = value["entrada"]
-                self.diccionario_permiso["hasta"] = value["salida"]
-                falto_marcado["permisos"].append(self.diccionario_permiso)
-                self.diccionario_permiso = {}
-
-                    
-            
-                    
-
-        if len(falto_marcado["permisos"]) > 0:
-            for noMarcado in falto_marcado["permisos"]:
-                self.marcacion["permisos"].append(noMarcado)
-                    
         json_marcado["marcado"].append(self.marcacion)
+                    
+
                     
                 
                 
